@@ -1,8 +1,14 @@
 import gradio as gr
 import json
 import os
-from diffusers import StableDiffusionPipeline
+import sys
 import torch
+
+# Adicionar a pasta Wan2.2 ao caminho do Python
+sys.path.append(os.path.join(os.path.dirname(__file__), "Wan2.2"))
+
+# Importar o pipeline do Wan2.2
+from wan.pipeline import WanPipeline  # ajuste conforme a estrutura interna
 
 PROMPTS_FILE = "prompts.json"
 
@@ -20,17 +26,13 @@ def save_prompt(title, prompt, image_path="placeholder.png"):
     with open(PROMPTS_FILE, "w", encoding="utf-8") as f:
         json.dump(prompts, f, ensure_ascii=False)
 
-# Inicializar modelo Stable Diffusion v1.5
+# Inicializar modelo Wan
 device = "cuda" if torch.cuda.is_available() else "cpu"
-pipe = StableDiffusionPipeline.from_pretrained(
-    "runwayml/stable-diffusion-v1-5",
-    torch_dtype=torch.float16 if device == "cuda" else torch.float32
-)
-pipe = pipe.to(device)
+pipe = WanPipeline(device=device)
 
 # Função de geração de imagem
 def generate_image(prompt):
-    image = pipe(prompt).images[0]
+    image = pipe(prompt)  # pipeline do Wan retorna imagem
     output_path = f"renders/{prompt[:20].replace(' ', '_')}.png"
     os.makedirs("renders", exist_ok=True)
     image.save(output_path)
@@ -39,11 +41,11 @@ def generate_image(prompt):
 # Interface Gradio
 def render_interface():
     with gr.Blocks() as demo:
-        gr.Markdown("## 🎬 Wan Render Interface (Teste com SD v1.5)")
+        gr.Markdown("## 🎬 Wan Render Interface (Wan2.2)")
 
         prompt_input = gr.Textbox(label="Digite seu prompt")
         title_input = gr.Textbox(label="Título para salvar")
-        cloud_choice = gr.Dropdown(["Local (SD v1.5)", "Wan (futuro)", "Colab", "Kaggle", "HuggingFace"], label="Escolha a nuvem")
+        cloud_choice = gr.Dropdown(["Local (Wan2.2)", "Colab", "Kaggle", "RunPod"], label="Escolha a nuvem")
 
         save_button = gr.Button("Salvar Prompt")
         output = gr.Textbox(label="Resultado")
